@@ -4,9 +4,29 @@ import csv
 from datetime import datetime
 import time
 
-# Configuration
-SERIAL_PORT = '/dev/ttyUSB0'
+# Configuration - will auto-detect if this doesn't work
 BAUD_RATE = 115200
+
+def find_arduino_port():
+    """Automatically find Arduino/ESP32 port"""
+    ports = serial.tools.list_ports.comports()
+    
+    # Look for common Arduino/ESP32 identifiers
+    arduino_keywords = ['Arduino', 'CH340', 'CP2102', 'USB Serial', 'USB-SERIAL', 'UART']
+    
+    print("Available serial ports:")
+    for port in ports:
+        print(f"  {port.device}: {port.description}")
+        # Check if this looks like an Arduino
+        for keyword in arduino_keywords:
+            if keyword.lower() in port.description.lower():
+                return port.device
+    
+    # If no auto-detection, return first available port or ask user
+    if len(ports) > 0:
+        return ports[0].device
+    
+    return None
 
 def parse_data_line(line):
     """Parse ESP32 output"""
@@ -33,6 +53,23 @@ def main():
     print("=" * 60)
     print("FSR DIAGNOSTIC TOOL")
     print("=" * 60)
+    
+    # Auto-detect serial port
+    print("\nDetecting Arduino/ESP32...")
+    serial_port = find_arduino_port()
+    
+    if serial_port is None:
+        print("\n❌ ERROR: No serial ports found!")
+        print("   Make sure your Arduino/ESP32 is connected via USB.")
+        return
+    
+    print(f"\n✓ Found device on: {serial_port}")
+    
+    # Allow user to override
+    user_input = input(f"\nUse {serial_port}? (Press Enter or type different port): ").strip()
+    if user_input:
+        serial_port = user_input
+    
     print("\nThis tool helps you verify your sensor behavior.\n")
     print("INSTRUCTIONS:")
     print("1. Start with your finger FULLY EXTENDED (straight)")
@@ -43,9 +80,14 @@ def main():
     
     input("\nPress Enter when your finger is FULLY EXTENDED...")
     
+    ser = None
+    
     try:
-        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-        print("\nSerial port opened. Starting monitoring...\n")
+        # Try to open serial port
+        print(f"\nOpening {serial_port}...")
+        ser = serial.Serial(serial_port, BAUD_RATE, timeout=1)
+        time.sleep(2)  # Give Arduino time to reset
+        print("Serial port opened. Starting monitoring...\n")
         
         readings = []
         max_voltage = 0
@@ -133,10 +175,27 @@ def main():
         print("- Mount FSR between two finger segments with foam")
         print("- Bending squeezes the foam against the FSR")
         print("=" * 60)
+    
+    except serial.SerialException as e:
+        print(f"\n❌ ERROR: Could not open serial port {serial_port}")
+        print(f"   Error: {e}")
+        print("\nTroubleshooting:")
+        print("1. Make sure your device is connected via USB")
+        print("2. Close any other programs using the serial port (Arduino IDE, etc.)")
+        print("3. Try unplugging and replugging the device")
+        print("4. Check Device Manager (Windows) to see the COM port")
+        print("\nTry one of these ports instead:")
+        ports = serial.tools.list_ports.comports()
+        for port in ports:
+            print(f"   {port.device}")
+    
+    except Exception as e:
+        print(f"\n❌ Unexpected error: {e}")
         
     finally:
-        if 'ser' in locals() and ser.is_open:
+        if ser is not None and ser.is_open:
             ser.close()
+            print("\nSerial port closed.")
 
 if __name__ == "__main__":
-    main()https://www.amazon.ca/spr/returns/cart?orderId=701-1722588-0958607&ref=ppx_yo2ov_dt_b_return_items
+    main()
