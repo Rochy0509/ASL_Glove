@@ -1,0 +1,7 @@
+Number of classes: 2
+Classes: EAT, HELLO
+
+For firmware update in asl_inference.cpp:
+  - Change kNumClasses to 2
+  - Update kLabelNames array
+  - Update kLabelToChar array

@@ -1,0 +1,18 @@
+{
+  "window_size": 25,
+  "num_features": 11,
+  "test_size": 0.2,
+  "random_seed": 42,
+  "model_type": "cnn_small",
+  "l2_reg": 0.0001,
+  "batch_size": 32,
+  "epochs": 100,
+  "learning_rate": 0.001,
+  "patience_early_stop": 15,
+  "patience_reduce_lr": 7,
+  "reduce_lr_factor": 0.5,
+  "use_class_weights": true,
+  "project_root": "/home/kenneth_m/Documents/kenneth_files/ASL_Glove/ML_model",
+  "data_file": "/home/kenneth_m/Documents/kenneth_files/ASL_Glove/ML_model/data/combined_dataset.csv",
+  "output_dir": "/home/kenneth_m/Documents/kenneth_files/ASL_Glove/ML_model/model/20251115_175012"
+}

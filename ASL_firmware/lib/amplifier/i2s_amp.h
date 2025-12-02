@@ -27,6 +27,7 @@ public:
     bool isReady();
     bool playFileFromSD(const char* filename);
     bool playCloudTTS(const char* text, const char* language = "en-US");
+    bool downloadCloudTTS(const char* text, const char* language, const char* filename);
     void stop();
     void pauseResume();
     void setVolume(int8_t vol);

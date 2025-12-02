@@ -2,9 +2,6 @@
 
 SD_module::SD_module(uint8_t chipSelectPin) : csPin(chipSelectPin), initialized(false),
                     rgb(NUM_PIXELS, RGB_LED_PIN, NEO_GRB + NEO_KHZ800) {
-  rgb.begin();
-  rgb.setBrightness(50); 
-  ledOff();
 }
 
 void SD_module::setLED(uint8_t r, uint8_t g, uint8_t b) { 
@@ -30,13 +27,18 @@ void SD_module::ledBlink(uint8_t r, uint8_t g, uint8_t b, int times, int delayMs
 }
 
 bool SD_module::begin() {
+  // Initialize NeoPixel HERE, not in constructor
+  rgb.begin();
+  rgb.setBrightness(50);
+  ledOff();
+  
   ledBlink(0, 0, 255, 2, 150);
   
-  // Initialize SPI with your custom pins FIRST!
+  // Initialize SPI with your custom pins
   SPI.begin(13, 12, 10, 9);  // SCK, MISO, MOSI, CS
   delay(100);
   
-  if (!SD.begin(csPin, SPI)) {  // Pass SPI object to SD.begin()
+  if (!SD.begin(csPin, SPI)) {
     Serial.println("SD Card Mount Failed!");
     ledBlink(255, 0, 0, 2, 100);
     return false;
@@ -216,4 +218,60 @@ void SD_module::clearStatusLED() {
 
 void SD_module::blinkStatusLED(uint8_t r, uint8_t g, uint8_t b, int times, int delayMs) {
   ledBlink(r, g, b, times, delayMs);
+}
+
+bool SD_module::clearTTSCache() {
+  if (!initialized) {
+    Serial.println("[SD] SD card not initialized");
+    ledBlink(255, 0, 0, 1, 150);
+    return false;
+  }
+
+  Serial.println("[SD] Clearing TTS cache...");
+  setLED(255, 128, 0);
+
+  File root = SD.open("/");
+  if (!root) {
+    Serial.println("[SD] Failed to open root directory");
+    ledBlink(255, 0, 0, 3, 200);
+    return false;
+  }
+
+  int deletedCount = 0;
+  int failedCount = 0;
+
+  File file = root.openNextFile();
+  while (file) {
+    String filename = String(file.name());
+    file.close();
+
+    if (filename.endsWith(".mp3") || filename.endsWith(".MP3")) {
+      Serial.printf("[SD] Deleting: %s\n", filename.c_str());
+      String filepath = "/" + filename;
+      if (SD.remove(filepath.c_str())) {
+        deletedCount++;
+      } else {
+        Serial.printf("[SD] Failed to delete: %s\n", filename.c_str());
+        failedCount++;
+      }
+    }
+
+    file = root.openNextFile();
+  }
+
+  root.close();
+
+  Serial.printf("[SD] TTS cache cleared: %d files deleted, %d failed\n", deletedCount, failedCount);
+
+  if (failedCount > 0) {
+    ledBlink(255, 128, 0, 2, 150);
+  } else if (deletedCount > 0) {
+    ledBlink(0, 255, 0, 3, 150);
+  } else {
+    Serial.println("[SD] No .mp3 files found in cache");
+    ledBlink(0, 255, 255, 2, 100);
+  }
+
+  ledOff();
+  return (failedCount == 0);
 }

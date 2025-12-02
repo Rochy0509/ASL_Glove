@@ -60,6 +60,9 @@ class SD_module{
         void setStatusLED(uint8_t r, uint8_t g, uint8_t b);
         void clearStatusLED();
         void blinkStatusLED(uint8_t r, uint8_t g, uint8_t b, int times = 3, int delayMs = 50);
+
+        // Clear TTS cache (delete all .mp3 files)
+        bool clearTTSCache();
 };
 
 #endif //AUDIO_SD_H
